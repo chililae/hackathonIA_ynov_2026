@@ -1,2 +1,14 @@
 datasets/dataset_v0.json
 .DS_Store
+
+# Environnement & caches IA locaux
+.venv_ia/
+rendu/ia/hf-cache/
+__pycache__/
+
+# Artefacts IA lourds / regenerables (produits par build_model.sh / mlx)
+rendu/ia/mlx_data/
+rendu/ia/adapters_qwen7b_finance/
+rendu/ia/merged_phi3_finance/
+ollama_server/merged_phi3_finance/
+*.gguf
