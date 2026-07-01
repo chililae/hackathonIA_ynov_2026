@@ -11,4 +11,4 @@ rendu/ia/mlx_data/
 rendu/ia/adapters_qwen7b_finance/
 rendu/ia/merged_phi3_finance/
 ollama_server/merged_phi3_finance/
-*.gguf
+rendu/ia/*.gguf

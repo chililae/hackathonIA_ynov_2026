@@ -1,42 +1,26 @@
 #!/usr/bin/env bash
 #
-# Construit et enregistre le modele financier FINETUNE dans Ollama.
+# Enregistre le modele financier FINETUNE (GGUF portable) dans Ollama.
 #
-# Principe (build-on-server, repo leger) : seul l'adaptateur LoRA propre (24 Mo)
-# est versionne. Ce script le fusionne dans la base pour produire un modele
-# servable, puis l'enregistre dans Ollama quantifie en q4_K_M.
+# Le GGUF quantifie Q4_K_M (~2,2 Go) est versionne via git LFS : AUCUN Mac ni
+# MLX requis. Ce script tourne sur n'importe quel serveur, Linux CPU inclus.
 #
-# IMPORTANT : l'etape "fuse" utilise MLX = Apple Silicon uniquement. Sur un
-# serveur Linux CPU, executer ce script sur un Mac pour produire le GGUF, puis
-# copier le GGUF sur le serveur (voir rendu/ia/DEPLOIEMENT.md).
-#
-# Usage : cd ollama_server && ./build_model.sh
+# Deploiement complet :
+#   git clone <repo> && cd <repo>
+#   git lfs install && git lfs pull          # materialise le .gguf
+#   curl -fsSL https://ollama.com/install.sh | sh   # Ollama (Linux)
+#   cd ollama_server && ./build_model.sh
+#   ollama run phi3-financial                # API: http://<serveur>:11434
 set -euo pipefail
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
-REPO="$(cd "$HERE/.." && pwd)"
-ADAPTER="$REPO/rendu/ia/adapters_phi3_finance_clean"
-MERGED="$HERE/merged_phi3_finance"
-BASE="mlx-community/Phi-3-mini-4k-instruct-4bit"
-PY="${PYTHON:-$REPO/.venv_ia/bin/python}"
+GGUF="$HERE/phi3-financial.gguf"
 
 command -v ollama >/dev/null || { echo "ERREUR: ollama introuvable (https://ollama.com/download)"; exit 1; }
-[ -d "$ADAPTER" ] || { echo "ERREUR: adaptateur introuvable: $ADAPTER"; exit 1; }
-[ -x "$PY" ] || PY="python3"
-
-echo "==> 1/2 Fusion adaptateur propre -> $MERGED (fp16, MLX)"
-if [ ! -f "$MERGED/config.json" ]; then
-  "$PY" -m mlx_lm fuse \
-    --model "$BASE" \
-    --adapter-path "$ADAPTER" \
-    --dequantize \
-    --save-path "$MERGED"
-else
-  echo "    (deja fusionne, on saute)"
+if [ ! -f "$GGUF" ] || [ "$(wc -c < "$GGUF")" -lt 1000000 ]; then
+  echo "ERREUR: $GGUF absent ou pointeur LFS non resolu. Lance : git lfs pull"; exit 1
 fi
 
-echo "==> 2/2 Enregistrement dans Ollama (quantize q4_K_M)"
 cd "$HERE"
-ollama create phi3-financial --quantize q4_K_M -f Modelfile
-
-echo "OK -> lancer :  ollama run phi3-financial"
+ollama create phi3-financial -f Modelfile
+echo "OK -> ollama run phi3-financial   (API HTTP: http://<serveur>:11434)"

@@ -1,12 +1,13 @@
 # Modelfile Ollama — Phi-3-Financial (finetune propre)
 #
 # CORRECTION de l'heritage `FROM phi3.5` : celui-ci servait la BASE nue, PAS le
-# fine-tune. On sert ici le modele finetune FUSIONNE, produit par build_model.sh
-# (merge de l'adaptateur propre `rendu/ia/adapters_phi3_finance_clean`).
+# fine-tune. On sert ici le GGUF finetune quantifie (Q3_K_M, <2 Go pour tenir
+# dans la limite LFS GitHub), PORTABLE : aucun Mac / MLX requis, marche sur
+# n'importe quel serveur Linux CPU.
 #
-# Build : `./build_model.sh` (Apple Silicon) puis `ollama run phi3-financial`.
+# Deploiement : git lfs pull && cd ollama_server && ./build_model.sh
 
-FROM ./merged_phi3_finance
+FROM ./phi3-financial.gguf
 
 SYSTEM """
 You are a financial assistant specialized in helping financial analysts at TechCorp Industries.
